@@ -220,6 +220,9 @@ html,body{min-height:100%;background:var(--bg);font-family:-apple-system,'SF Pro
           <div class="field"><label>Contact name</label><input type="text" id="cust-name" placeholder="Full name"></div>
           <div class="field"><label>Phone</label><input type="tel" id="cust-phone" placeholder="+1 (555) 000-0000"></div>
         </div>
+        <div class="field-group">
+          <div class="field"><label>Email</label><input type="email" id="cust-email" placeholder="customer@email.com"></div>
+        </div>
         <div class="field-group cols-2">
           <div class="field"><label>Sales rep</label><input type="text" id="sales-rep" placeholder="Your name"></div>
           <div class="field"><label>Date</label><input type="date" id="quote-date"></div>
@@ -419,6 +422,7 @@ function getFormData(){
     custCompany: document.getElementById('cust-company').value,
     custName: document.getElementById('cust-name').value,
     custPhone: document.getElementById('cust-phone').value,
+    custEmail: document.getElementById('cust-email').value,
     salesRep: document.getElementById('sales-rep').value,
     quoteDate: document.getElementById('quote-date').value,
     taxRate: document.getElementById('tax-rate').value,
@@ -433,7 +437,7 @@ function getFormData(){
 function setFormData(d){
   const s=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v;};
   s('cust-company',d.custCompany); s('cust-name',d.custName);
-  s('cust-phone',d.custPhone); s('sales-rep',d.salesRep);
+  s('cust-phone',d.custPhone); s('cust-email',d.custEmail); s('sales-rep',d.salesRep);
   s('quote-date',d.quoteDate); s('tax-rate',d.taxRate);
   s('t-setup-input',d.setup); s('t-discount-input',d.discount);
   s('install-ext',d.installExt);
@@ -587,6 +591,7 @@ function exportQuote(){
   const company=d.custCompany||'Customer';
   const contact=d.custName||'';
   const phone=d.custPhone||'';
+  const email=d.custEmail||'';
   const date=d.quoteDate?new Date(d.quoteDate).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
 
   // Build recurring breakdown rows
@@ -647,7 +652,7 @@ function exportQuote(){
 
 <h1>OACYS VoIP Business (Hosted Phone System)</h1>
 <h2>Pricing Information – (${company})</h2>
-${contact||phone?`<p style="text-align:center;font-size:13px;color:#555">${contact}${contact&&phone?' &nbsp;|&nbsp; ':''}${phone}</p>`:''}
+${contact||phone||email?`<p style="text-align:center;font-size:13px;color:#555">${contact}${contact&&phone?' &nbsp;|&nbsp; ':''}${phone}${(contact||phone)&&email?' &nbsp;|&nbsp; ':''}${email}</p>`:''}
 <p style="text-align:center;font-size:12px;color:#888">Date: ${date}</p>
 
 <div class="section-title">Voice Service</div>
