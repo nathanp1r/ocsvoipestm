@@ -342,6 +342,7 @@ const ITEMS = [
   {num:12, desc:'Toll Free Number',               unit:39.95},
 ];
 
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxJrqrmfzqjS4Mjz8Y-UgwJX6i53Ms1eEwo9eDsBZZx_xMAkjlq81tf64NygHB7tlO5/exec';
 let currentId = null;
 let isViewMode = false;
 let deleteTargetId = null;
@@ -400,6 +401,7 @@ function recalc(){
   document.getElementById('install-first').textContent=fmt(instFirst);
   document.getElementById('install-addl').textContent=fmt(instAddl);
   document.getElementById('install-total').textContent=fmt(instFirst+instAddl);
+  document.getElementById('t-setup-input').value=(instFirst+instAddl).toFixed(2);
 
   const taxRate=parseFloat(document.getElementById('tax-rate').value)||0;
   const salestax=sub*(taxRate/100);
@@ -478,6 +480,13 @@ function submitQuote(){
   if(idx>=0){ quotes[idx]=data; }
   else{ quotes.unshift(data); }
   saveAllQuotes(quotes);
+  // Send to Google Sheets
+  fetch(SHEETS_URL, {
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  }).catch(()=>{});
   showToast('✓ Quote submitted');
   setTimeout(()=>goHome(),800);
 }
