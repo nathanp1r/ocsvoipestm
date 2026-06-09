@@ -347,13 +347,45 @@ let currentId = null;
 let isViewMode = false;
 let deleteTargetId = null;
 
-/* ── Storage helpers ── */
-function getAllQuotes(){
-  try{ return JSON.parse(localStorage.getItem('oacys_quotes')||'[]'); }catch(e){ return []; }
+/* ── Supabase config ── */
+const SUPA_URL = 'https://rhaphsisloxypyteuhto.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoYXBoc2lzbG94eXB5dGV1aHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDIyMDcsImV4cCI6MjA5NjYxODIwN30.6QELdtd8og3K1yeRrp9MH1ccBVr1HXsdxJ494o7xcGA';
+
+function supaHeaders(){
+  return {'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation'};
 }
-function saveAllQuotes(arr){
-  localStorage.setItem('oacys_quotes', JSON.stringify(arr));
+
+async function getAllQuotes(){
+  try{
+    const r = await fetch(SUPA_URL+'/rest/v1/quotes?order=savedAt.desc', {headers: supaHeaders()});
+    if(!r.ok) return [];
+    return await r.json();
+  }catch(e){ return []; }
 }
+
+async function saveQuote(data){
+  try{
+    // Check if exists
+    const r = await fetch(SUPA_URL+'/rest/v1/quotes?id=eq.'+data.id, {headers: supaHeaders()});
+    const existing = await r.json();
+    if(existing && existing.length > 0){
+      await fetch(SUPA_URL+'/rest/v1/quotes?id=eq.'+data.id, {
+        method:'PATCH', headers: supaHeaders(), body: JSON.stringify(data)
+      });
+    } else {
+      await fetch(SUPA_URL+'/rest/v1/quotes', {
+        method:'POST', headers: supaHeaders(), body: JSON.stringify(data)
+      });
+    }
+  }catch(e){}
+}
+
+async function deleteQuote(id){
+  try{
+    await fetch(SUPA_URL+'/rest/v1/quotes?id=eq.'+id, {method:'DELETE', headers: supaHeaders()});
+  }catch(e){}
+}
+
 function genId(){
   return 'q_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
 }
@@ -456,12 +488,8 @@ function setFormData(d){
 /* ── Auto save (updates existing record) ── */
 function autoSave(){
   if(isViewMode||!currentId) return;
-  const quotes=getAllQuotes();
-  const idx=quotes.findIndex(q=>q.id===currentId);
   const data={...getFormData(), status:'draft', savedAt:new Date().toISOString()};
-  if(idx>=0){ quotes[idx]={...quotes[idx],...data}; }
-  else{ quotes.unshift(data); }
-  saveAllQuotes(quotes);
+  saveQuote(data);
 }
 
 /* ── Save draft button ── */
@@ -471,22 +499,11 @@ function saveDraft(){
 }
 
 /* ── Submit ── */
-function submitQuote(){
+async function submitQuote(){
   const d=getFormData();
   if(!d.custCompany.trim()){ showToast('⚠ Enter a company name'); return; }
-  const quotes=getAllQuotes();
-  const idx=quotes.findIndex(q=>q.id===currentId);
   const data={...d, status:'submitted', submittedAt:new Date().toISOString(), savedAt:new Date().toISOString()};
-  if(idx>=0){ quotes[idx]=data; }
-  else{ quotes.unshift(data); }
-  saveAllQuotes(quotes);
-  // Send to Google Sheets
-  fetch(SHEETS_URL, {
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(data)
-  }).catch(()=>{});
+  await saveQuote(data);
   showToast('✓ Quote submitted');
   setTimeout(()=>goHome(),800);
 }
@@ -545,17 +562,17 @@ function openQuote(id){
 /* ── Delete ── */
 function confirmDelete(){ deleteTargetId=currentId; document.getElementById('confirm-overlay').classList.add('show'); }
 function closeConfirm(){ document.getElementById('confirm-overlay').classList.remove('show'); }
-function doDelete(){
+async function doDelete(){
   closeConfirm();
-  const quotes=getAllQuotes().filter(q=>q.id!==deleteTargetId);
-  saveAllQuotes(quotes);
+  await deleteQuote(deleteTargetId);
   showToast('Deleted');
   setTimeout(()=>goHome(),600);
 }
 
 /* ── Render home ── */
-function renderHome(){
-  const quotes=getAllQuotes();
+async function renderHome(){
+  showToast('Loading...');
+  const quotes=await getAllQuotes();
   const drafts=quotes.filter(q=>q.status==='draft');
   const submitted=quotes.filter(q=>q.status==='submitted');
   document.getElementById('stat-total').textContent=quotes.length;
