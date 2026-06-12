@@ -357,7 +357,7 @@ function supaHeaders(){
 
 async function getAllQuotes(){
   try{
-    const r = await fetch(SUPA_URL+'/rest/v1/quotes?order=savedAt.desc', {headers: supaHeaders()});
+    const r = await fetch(SUPA_URL+'/rest/v1/Quotes?order=savedAt.desc', {headers: supaHeaders()});
     if(!r.ok) return [];
     return await r.json();
   }catch(e){ return []; }
@@ -366,14 +366,14 @@ async function getAllQuotes(){
 async function saveQuote(data){
   try{
     // Check if exists
-    const r = await fetch(SUPA_URL+'/rest/v1/quotes?id=eq.'+data.id, {headers: supaHeaders()});
+    const r = await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+data.id, {headers: supaHeaders()});
     const existing = await r.json();
     if(existing && existing.length > 0){
-      await fetch(SUPA_URL+'/rest/v1/quotes?id=eq.'+data.id, {
+      await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+data.id, {
         method:'PATCH', headers: supaHeaders(), body: JSON.stringify(data)
       });
     } else {
-      await fetch(SUPA_URL+'/rest/v1/quotes', {
+      await fetch(SUPA_URL+'/rest/v1/Quotes', {
         method:'POST', headers: supaHeaders(), body: JSON.stringify(data)
       });
     }
@@ -382,7 +382,7 @@ async function saveQuote(data){
 
 async function deleteQuote(id){
   try{
-    await fetch(SUPA_URL+'/rest/v1/quotes?id=eq.'+id, {method:'DELETE', headers: supaHeaders()});
+    await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+id, {method:'DELETE', headers: supaHeaders()});
   }catch(e){}
 }
 
