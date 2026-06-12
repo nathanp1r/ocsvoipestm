@@ -369,15 +369,17 @@ async function saveQuote(data){
     const r = await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+data.id, {headers: supaHeaders()});
     const existing = await r.json();
     if(existing && existing.length > 0){
-      await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+data.id, {
+      const pr = await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+data.id, {
         method:'PATCH', headers: supaHeaders(), body: JSON.stringify(data)
       });
+      if(!pr.ok){ const err=await pr.text(); showToast('Error: '+err.slice(0,50)); console.error('PATCH error:',err); }
     } else {
-      await fetch(SUPA_URL+'/rest/v1/Quotes', {
+      const pr = await fetch(SUPA_URL+'/rest/v1/Quotes', {
         method:'POST', headers: supaHeaders(), body: JSON.stringify(data)
       });
+      if(!pr.ok){ const err=await pr.text(); showToast('Error: '+err.slice(0,50)); console.error('POST error:',err); }
     }
-  }catch(e){}
+  }catch(e){ showToast('Save failed: '+e.message); console.error('saveQuote error:',e); }
 }
 
 async function deleteQuote(id){
