@@ -359,32 +359,39 @@ async function getAllQuotes(){
   try{
     const r = await fetch(SUPA_URL+'/rest/v1/Quotes?order=savedAt.desc', {headers: supaHeaders()});
     if(!r.ok) return [];
-    return await r.json();
+    const rows = await r.json();
+    // Map quoteId back to id for the app
+    return rows.map(q => ({...q, id: q.quoteId||q.id}));
   }catch(e){ return []; }
 }
 
 async function saveQuote(data){
   try{
-    // Check if exists
-    const r = await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+data.id, {headers: supaHeaders()});
+    // Strip auto-generated id, use quoteId for our own identifier
+    const payload = {...data};
+    delete payload.id;
+
+    // Check if record with this quoteId exists
+    const r = await fetch(SUPA_URL+'/rest/v1/Quotes?quoteId=eq.'+data.id, {headers: supaHeaders()});
     const existing = await r.json();
     if(existing && existing.length > 0){
-      const pr = await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+data.id, {
-        method:'PATCH', headers: supaHeaders(), body: JSON.stringify(data)
+      const pr = await fetch(SUPA_URL+'/rest/v1/Quotes?quoteId=eq.'+data.id, {
+        method:'PATCH', headers: supaHeaders(), body: JSON.stringify(payload)
       });
-      if(!pr.ok){ const err=await pr.text(); showToast('Error: '+err.slice(0,50)); console.error('PATCH error:',err); }
+      if(!pr.ok){ const err=await pr.text(); console.error('PATCH error:',err); }
     } else {
+      payload.quoteId = data.id;
       const pr = await fetch(SUPA_URL+'/rest/v1/Quotes', {
-        method:'POST', headers: supaHeaders(), body: JSON.stringify(data)
+        method:'POST', headers: supaHeaders(), body: JSON.stringify(payload)
       });
-      if(!pr.ok){ const err=await pr.text(); showToast('Error: '+err.slice(0,50)); console.error('POST error:',err); }
+      if(!pr.ok){ const err=await pr.text(); console.error('POST error:',err); }
     }
-  }catch(e){ showToast('Save failed: '+e.message); console.error('saveQuote error:',e); }
+  }catch(e){ console.error('saveQuote error:',e); }
 }
 
 async function deleteQuote(id){
   try{
-    await fetch(SUPA_URL+'/rest/v1/Quotes?id=eq.'+id, {method:'DELETE', headers: supaHeaders()});
+    await fetch(SUPA_URL+'/rest/v1/Quotes?quoteId=eq.'+id, {method:'DELETE', headers: supaHeaders()});
   }catch(e){}
 }
 
